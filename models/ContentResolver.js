@@ -1,5 +1,6 @@
-const database = require('../database')
-const utils = require('../utils/contentResolverutils')
+const database = require('../database'),
+  utils = require('../utils/contentResolverutils'),
+  formatResult = require('../utils/formatResponseData')
 
 /**
  * Responsible for querying the database
@@ -87,7 +88,6 @@ class ContentResolver {
       WHERE ${whereString} = $1;
       `
     const valuesArray = [id]
-
     return sendRequest(queryString, valuesArray)
 
   }
@@ -101,12 +101,12 @@ class ContentResolver {
   update(id, values) {
     const valuesArray = utils.formatUpdateArray(values)
     valuesArray.push(id)
-    const updateString = utils.formatUpdateString(values)
+    const updateParamsString = utils.formatUpdateParamsString(values)
     const paramsString = `$${valuesArray.length}`
 
     const queryString = `
       UPDATE ${this.TABLE.TABLE_NAME}
-      SET ${updateString}
+      SET ${updateParamsString}
       WHERE ${database.BASECOLUMNS._ID} = ${paramsString}
       RETURNING *;
     `
@@ -130,11 +130,11 @@ class ContentResolver {
 
 }
 
-function sendRequest(queryString, valuesArray) {
+async function sendRequest(queryString, valuesArray) {
   try {
-    const result = database.query(queryString, valuesArray)
+    const result = await database.query(queryString, valuesArray)
     if (result !== null) {
-      return result
+      return formatResult(result)
     }
   } catch (err) {
     console.log(err)

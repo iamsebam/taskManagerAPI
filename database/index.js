@@ -1,8 +1,8 @@
 const { Pool } = require('pg')
 
-const USERS = require('../models/user').TABLE
-const TASKS = require('../models/task').TABLE
-const TODOS = require('../models/todo').TABLE
+const USERS = require('../models/User').TABLE
+const TASKS = require('../models/Task').TABLE
+const TODOS = require('../models/Todo').TABLE
 
 const BASECOLUMNS = {
   _ID: '_id',
@@ -11,6 +11,8 @@ const BASECOLUMNS = {
 }
 
 const pool = new Pool()
+
+//TODO Create a blacklist token table, tokens are put there when a user uses /logout route
 
 const createTablesString = `
   CREATE EXTENSION IF NOT EXISTS "pgcrypto";
@@ -27,7 +29,7 @@ const createTablesString = `
   ${BASECOLUMNS._ID} UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   ${TASKS.COLUMNS.NAME} VARCHAR NOT NULL,
   ${TASKS.COLUMNS.IS_COMPLETED} BOOLEAN,
-  ${TASKS.COLUMNS.CREATOR_ID} UUID REFERENCES ${USERS.TABLE_NAME}(${BASECOLUMNS._ID}),
+  ${TASKS.COLUMNS.CREATOR_ID} UUID REFERENCES ${USERS.TABLE_NAME}(${BASECOLUMNS._ID}) ON DELETE CASCADE,
   ${BASECOLUMNS.CREATED_AT} TIMESTAMP DEFAULT NOW(),
   ${BASECOLUMNS.LAST_MODIFIED} TIMESTAMP
   );
@@ -36,7 +38,7 @@ const createTablesString = `
   ${BASECOLUMNS._ID} UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   ${TODOS.COLUMNS.BODY} VARCHAR NOT NULL,
   ${TODOS.COLUMNS.IS_COMPLETED} BOOLEAN,
-  ${TODOS.COLUMNS.TASK_ID} UUID REFERENCES ${TASKS.TABLE_NAME}(${BASECOLUMNS._ID}),
+  ${TODOS.COLUMNS.TASK_ID} UUID REFERENCES ${TASKS.TABLE_NAME}(${BASECOLUMNS._ID}) ON DELETE CASCADE,
   ${BASECOLUMNS.CREATED_AT} TIMESTAMP DEFAULT NOW(),
   ${BASECOLUMNS.LAST_MODIFIED} TIMESTAMP
   );

@@ -1,5 +1,4 @@
 /node_modules
 /.env
-/DB_structure.png
 /.idea
 test.js

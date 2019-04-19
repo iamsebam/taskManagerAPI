@@ -1,9 +1,13 @@
-const userRoute = require('./userRoute')
-const taskRoute = require('./taskRoute')
-const todoRoute = require('./todoRoute')
+const passport = require('passport')
+
+const userRoute = require('./userRoute'),
+  taskRoute = require('./taskRoute'),
+  todoRoute = require('./todoRoute'),
+  errorHandler = require('../utils/errorHandler')
 
 module.exports = (app) => {
-  app.use('/users', userRoute)
-  app.use('/tasks', taskRoute)
-  app.use('/todos', todoRoute)
+  app.use('/api', userRoute)
+  app.use('/api', passport.authenticate('jwt', { session: false }), taskRoute)
+  app.use('/api', passport.authenticate('jwt', { session: false }), todoRoute)
+  app.use(errorHandler)
 }

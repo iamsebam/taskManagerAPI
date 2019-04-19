@@ -1,20 +1,7 @@
 module.exports = data => {
-  let responseBody = {
-    operation: data.command
+  return {
+    operation: data.command,
+    recordsCount: data.rowCount || 0,
+    data: data.rows || [],
   }
-  if (data.rowCount >= 1) {
-    responseBody = {
-      ...responseBody,
-      success: true,
-      data: data.rows
-    }
-  } else {
-    responseBody = {
-      ...responseBody,
-      success: false,
-      message: data.message,
-      data: []
-    }
-  }
-  return responseBody
 }
