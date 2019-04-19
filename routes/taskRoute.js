@@ -27,10 +27,7 @@ router.get('/tasks', async (req, res, next) => {
   const creator_id = req.user._id
   try {
     const result = await contentResolver.getAll(creator_id)
-    if (result.data[0] && result.data[0].creator_id === creator_id) {
-      return new Response(200, result, ['Tasks successfully fetched.']).send(res)
-    }
-    return new Response(404, {}, ['Resource not found.']).send(res)
+    return new Response(200, result, ['Tasks successfully fetched.']).send(res)
   } catch (err) {
     console.log(err)
     next(err)
@@ -81,7 +78,6 @@ router.delete('/tasks/:task_id', validateTaskId, executeValidation, async (req, 
       }
     }
     return new Response(404, {}, ['Resource not found.']).send(res)
-
   } catch (err) {
     console.log(err)
     next(err)

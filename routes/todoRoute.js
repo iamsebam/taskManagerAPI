@@ -12,7 +12,6 @@ const executeValidation = require('../utils/executeValidation')
 
 router.post('/todos', validateCreateTodo, executeValidation, async (req, res, next) => {
   const { body, task_id } = req.body
-  // check if user has access to task
   try {
     const task = await tasksContentResolver.getOne({ _id: task_id })
     if (task.data[0] && task.data[0].creator_id === req.user._id) {
@@ -55,8 +54,6 @@ router.get('/todos/:todo_id', validateTodoId, executeValidation, async (req, res
       }
     }
     return new Response(404, {}, ['Resource not found.']).send(res)
-
-
   } catch (err) {
     console.log(err)
     next(err)
