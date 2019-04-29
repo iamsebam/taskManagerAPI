@@ -1,5 +1,5 @@
 const database = require('../database'),
-  utils = require('../utils/contentResolverutils'),
+  utils = require('../utils/contentResolverUtils'),
   formatResult = require('../utils/formatResponseData')
 
 /**
