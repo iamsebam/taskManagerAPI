@@ -129,7 +129,9 @@ const dropEverything = `
   DROP TABLE ${USERS.TABLE_NAME}, ${TASKS.TABLE_NAME}, ${TODOS.TABLE_NAME}, ${INACTIVE_TOKENS.TABLE_NAME};
 `
 
-const pool = new Pool()
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL
+})
 
 module.exports = {
   /**
