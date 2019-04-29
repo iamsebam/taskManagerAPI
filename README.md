@@ -1,4 +1,4 @@
-# taskManager
+# taskManagerAPI
 
 To run in your environment:
 1. Create a new postgreSQL database
@@ -12,3 +12,4 @@ To run in your environment:
     PGPASSWORD={YOUR_DATABASE_PASSWORD}
     PGPORT={YOUR_DATABASE_PORT}
 ```
+4. Run 'npm start' / 'npm run dev' in the project directory
