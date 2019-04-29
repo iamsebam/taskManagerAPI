@@ -3,16 +3,13 @@ const { Pool } = require('pg')
 const USERS = require('../models/User').TABLE
 const TASKS = require('../models/Task').TABLE
 const TODOS = require('../models/Todo').TABLE
+const INACTIVE_TOKENS = require('../models/InactiveToken').TABLE
 
 const BASECOLUMNS = {
   _ID: '_id',
   CREATED_AT: 'created_at',
   LAST_MODIFIED: 'last_modified'
 }
-
-const pool = new Pool()
-
-//TODO Create a blacklist token table, tokens are put there when a user uses /logout route
 
 const createTablesString = `
   CREATE EXTENSION IF NOT EXISTS "pgcrypto";
@@ -42,6 +39,15 @@ const createTablesString = `
   ${BASECOLUMNS.CREATED_AT} TIMESTAMP DEFAULT NOW(),
   ${BASECOLUMNS.LAST_MODIFIED} TIMESTAMP
   );
+  
+  CREATE TABLE IF NOT EXISTS ${INACTIVE_TOKENS.TABLE_NAME}(
+  ${BASECOLUMNS._ID} UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  ${INACTIVE_TOKENS.COLUMNS.TOKEN} VARCHAR NOT NULL,
+  ${BASECOLUMNS.CREATED_AT} TIMESTAMP DEFAULT NOW(),
+  ${BASECOLUMNS.LAST_MODIFIED} TIMESTAMP
+  );
+  
+  
   `
 const createLastModifiedTrigger = `
   CREATE OR REPLACE FUNCTION last_modified_trigger_function()
@@ -70,8 +76,31 @@ const createLastModifiedTrigger = `
   BEFORE UPDATE OR INSERT ON ${TODOS.TABLE_NAME} 
   FOR EACH ROW 
   EXECUTE PROCEDURE last_modified_trigger_function();
+  
+  DROP TRIGGER IF EXISTS last_modified_trigger ON ${INACTIVE_TOKENS.TABLE_NAME};
+  CREATE TRIGGER last_modified_trigger
+  BEFORE UPDATE OR INSERT ON ${INACTIVE_TOKENS.TABLE_NAME} 
+  FOR EACH ROW 
+  EXECUTE PROCEDURE last_modified_trigger_function();
   `
 
+const createCleanExpiredTokensTrigger = `
+
+  CREATE OR REPLACE FUNCTION clean_expired_tokens()
+  RETURNS TRIGGER AS $$
+  BEGIN
+  DELETE FROM ${INACTIVE_TOKENS.TABLE_NAME} WHERE ${BASECOLUMNS.CREATED_AT} < NOW() - INTERVAL '32 days';
+  RETURN NEW;
+  END;
+  $$ language 'plpgsql';
+
+  DROP TRIGGER IF EXISTS clean_expired_tokens_trigger ON ${INACTIVE_TOKENS.TABLE_NAME};
+  CREATE TRIGGER clean_expired_tokens_trigger
+  BEFORE INSERT ON ${INACTIVE_TOKENS.TABLE_NAME}
+  FOR EACH ROW
+  EXECUTE PROCEDURE clean_expired_tokens();
+
+`
 const createTodoSummaryViewString = `
   CREATE OR REPLACE VIEW TodoSummary AS
   SELECT ${USERS.TABLE_NAME}.${USERS.COLUMNS.USERNAME} AS Username,
@@ -95,8 +124,13 @@ const dropEverything = `
   DROP TRIGGER IF EXISTS last_modified_trigger ON ${USERS.TABLE_NAME};
   DROP TRIGGER IF EXISTS last_modified_trigger ON ${TASKS.TABLE_NAME};
   DROP TRIGGER IF EXISTS last_modified_trigger ON ${TODOS.TABLE_NAME};
-  DROP TABLE ${USERS.TABLE_NAME}, ${TASKS.TABLE_NAME}, ${TODOS.TABLE_NAME};
+  DROP TRIGGER IF EXISTS last_modified_trigger ON ${INACTIVE_TOKENS.TABLE_NAME};
+  DROP TRIGGER IF EXISTS clean_expired_tokens_trigger ON ${INACTIVE_TOKENS.TABLE_NAME};
+  DROP TABLE ${USERS.TABLE_NAME}, ${TASKS.TABLE_NAME}, ${TODOS.TABLE_NAME}, ${INACTIVE_TOKENS.TABLE_NAME};
 `
+
+const pool = new Pool()
+
 module.exports = {
   /**
    *
@@ -117,11 +151,13 @@ module.exports = {
    */
   init: async (forceClear) => {
     try {
+      
       if (forceClear) {
         await pool.query(dropEverything)
       }
       await pool.query(createTablesString)
       await pool.query(createLastModifiedTrigger)
+      await pool.query(createCleanExpiredTokensTrigger)
       await pool.query(createTaskSummaryViewString)
       await pool.query(createTodoSummaryViewString)
       console.log('Database initialized...')
@@ -132,5 +168,6 @@ module.exports = {
   BASECOLUMNS,
   USERS,
   TASKS,
-  TODOS
+  TODOS,
+  INACTIVE_TOKENS
 }

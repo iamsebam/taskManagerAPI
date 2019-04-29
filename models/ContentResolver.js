@@ -43,6 +43,9 @@ class ContentResolver {
       case database.USERS.COLUMNS.USERNAME:
         whereString = database.USERS.COLUMNS.USERNAME
         break
+      case database.INACTIVE_TOKENS.COLUMNS.TOKEN:
+        whereString = database.INACTIVE_TOKENS.COLUMNS.TOKEN
+        break
       default:
         return {
           command: 'SELECT',
